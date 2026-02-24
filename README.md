@@ -1,6 +1,6 @@
 # MedGemma EBP Copilot
 
-Public, lean version of the MedGemma Evidence-Based Practice assistant.
+MedGemma Evidence-Based Practice assistant for the kaggle med-gemma-impact-challenge.
 
 ## What is included
 
