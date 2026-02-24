@@ -1,11 +1,13 @@
-# Windows artifacts
+# OS/editor artifacts
 desktop.ini
-.chatspace/
+.DS_Store
 
 # Node / frontend artifacts
 node_modules/
+app/node_modules/
 dist/
 build/
+coverage/
 
 # Python artifacts
 __pycache__/
@@ -14,6 +16,8 @@ __pycache__/
 *.pyd
 .pytest_cache/
 .mypy_cache/
+.venv/
+venv/
 
 # Runtime / local state
 *.log
@@ -22,3 +26,12 @@ __pycache__/
 # Environment files
 .env
 .env.*
+
+# Notebook / temp artifacts
+.ipynb_checkpoints/
+*.tmp
+tmp/
+
+# Optional local hidden workspace folders
+.space/
+.tmp_kaggle/
