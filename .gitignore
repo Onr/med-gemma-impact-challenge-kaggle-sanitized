@@ -1,0 +1,24 @@
+# Windows artifacts
+desktop.ini
+.chatspace/
+
+# Node / frontend artifacts
+node_modules/
+dist/
+build/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Runtime / local state
+*.log
+.pids/
+
+# Environment files
+.env
+.env.*

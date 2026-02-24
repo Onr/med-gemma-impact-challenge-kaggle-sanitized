@@ -1,0 +1,24 @@
+# MedGemma Backend Dependencies
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+
+# ML/AI
+torch>=2.0.0
+transformers>=4.40.0
+accelerate>=0.25.0
+safetensors
+sentencepiece
+
+# Image handling
+pillow>=10.0.0
+
+# Google AI API (Gemma cloud inference)
+google-genai>=1.0.0
+
+# Optional: For Kaggle model downloads
+kagglehub
+
+# Optional: For structured outputs
+pydantic>=2.0.0

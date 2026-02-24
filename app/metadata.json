@@ -1,0 +1,7 @@
+{
+  "name": "MedGemma EBP Copilot",
+  "description": "An AI-powered clinical decision support system guiding healthcare professionals through the 5-step evidence-based practice cycle.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

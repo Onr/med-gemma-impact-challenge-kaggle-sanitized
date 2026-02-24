@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Med-Gamma SOAP Hub Demo</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --accent-rose: #f43f5e;
+            --border-color: #334155;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Right Chat Panel --- */
+        .chat-panel {
+            width: 400px;
+            background-color: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            order: 2;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chat-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mode-selector {
+            display: flex;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 2px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding: 6px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .mode-btn.active {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 85%;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .message.system {
+            align-self: flex-start;
+            background-color: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px 8px 8px 0;
+            padding: 12px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--accent-blue);
+            color: white;
+            border-radius: 8px 8px 0 8px;
+            padding: 12px;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--panel-bg);
+        }
+
+        .chat-input {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            resize: none;
+            outline: none;
+        }
+
+        /* --- Main Visual Hub --- */
+        .hub-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at center, #1e293b 0%, #0f172a 70%);
+        }
+
+        .visualization {
+            width: 100%;
+            height: 60%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Structured Output Panel (Bottom) */
+        .info-panel {
+            width: 100%;
+            height: 40%;
+            background-color: rgba(15, 23, 42, 0.8);
+            border-top: 1px solid var(--border-color);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        .info-section-title {
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .info-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .info-card .value {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .value.highlight {
+            color: var(--accent-rose);
+        }
+
+        /* Color differentiation for Subjective vs Objective */
+        .info-card.subjective {
+            border-left: 3px solid var(--accent-blue);
+        }
+        .info-card.objective {
+            border-left: 3px solid var(--accent-teal);
+        }
+        .percentage-indicator {
+            font-size: 0.8rem; 
+            opacity: 0.7; 
+            margin-left: 5px;
+        }
+
+        /* SVG Styles */
+        svg {
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 500px;
+            overflow: visible;
+        }
+
+        .sector {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        .sector:hover {
+            opacity: 0.8;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+        }
+
+        .sector.active {
+            opacity: 1;
+            filter: drop-shadow(0 0 15px currentColor);
+            stroke: white;
+            stroke-width: 2px;
+        }
+
+        .patient-core {
+            fill: var(--panel-bg);
+            stroke: var(--border-color);
+            stroke-width: 2;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .patient-core:hover {
+            transform: scale(1.05);
+            stroke: var(--text-primary);
+        }
+
+        .outcome-circle {
+            fill: rgba(255, 255, 255, 0.05);
+            stroke: var(--accent-teal);
+            stroke-width: 1;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(4px);
+        }
+
+        .outcome-circle:hover {
+            fill: rgba(20, 184, 166, 0.2);
+            stroke: white;
+            filter: drop-shadow(0 0 8px var(--accent-teal));
+        }
+
+        .patient-core {
+            fill: rgba(30, 41, 59, 0.8);
+            stroke: var(--border-color);
+            stroke-width: 2;
+            cursor: pointer;
+            transition: transform 0.3s;
+            backdrop-filter: blur(4px);
+        }
+        
+        .flow-arrow {
+            filter: drop-shadow(0 0 2px rgba(255,255,255,0.4));
+            stroke-dasharray: 5,2;
+            animation: flow 20s linear infinite;
+        }
+
+        @keyframes flow {
+            from { stroke-dashoffset: 100; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Chips represented as interactive circles */
+        .chip {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip:hover {
+            r: 10; 
+            stroke: white;
+            stroke-width: 2;
+        }
+
+        /* Labels */
+        .label-text {
+            font-size: 14px;
+            font-family: sans-serif;
+            font-weight: bold;
+            fill: var(--text-primary);
+            pointer-events: none;
+            text-anchor: middle;
+        }
+
+        .sector-label {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 800;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Overlay UI Elements in Hub */
+        .floating-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 184, 166, 0.2);
+            color: var(--accent-teal);
+            border: 1px solid var(--accent-teal);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Right Chat Panel -->
+    <div class="chat-panel">
+        <div class="chat-header">
+            <div class="chat-title">
+                <span>⚡</span> Med-Gamma Copilot
+            </div>
+            <div class="mode-selector">
+                <button class="mode-btn active" onclick="setMode('full')">Full</button>
+                <button class="mode-btn" onclick="setMode('so')">S/O</button>
+                <button class="mode-btn" onclick="setMode('a')">A</button>
+                <button class="mode-btn" onclick="setMode('p')">P</button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chat-stream">
+            <!-- Messages injected via JS -->
+        </div>
+
+        <div class="chat-input-area">
+            <textarea class="chat-input" rows="1" placeholder="Type a message or drag artifact..."></textarea>
+        </div>
+    </div>
+
+        <!-- Central Hub Visualization -->
+    <div class="hub-container">
+        <div class="floating-badge">
+            <span>●</span> Evidence Retrieval Active
+        </div>
+
+        <div class="visualization">
+            <svg viewBox="0 0 400 400">
+                <!-- Defs for glow and arrow -->
+                <defs>
+                    <!-- Glassy Glow Filter -->
+                    <filter id="glass-glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+                        <feColorMatrix in="blur" type="matrix" values="
+                            1 0 0 0 0
+                            0 1 0 0 0
+                            0 0 1 0 0
+                            0 0 0 18 -7" result="goo" />
+                        <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+                    </filter>
+
+                    <!-- Gradients for "Liquid" Sectors -->
+                    <linearGradient id="grad-so" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.9" />
+                        <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.4" />
+                    </linearGradient>
+                    <linearGradient id="grad-a" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:0.9" />
+                        <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.4" />
+                    </linearGradient>
+                    <linearGradient id="grad-p" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#2dd4bf;stop-opacity:0.9" />
+                        <stop offset="100%" style="stop-color:#14b8a6;stop-opacity:0.4" />
+                    </linearGradient>
+
+                    <!-- Gradient for Arrows (Liquid Flow) -->
+                    <linearGradient id="grad-flow" gradientUnits="userSpaceOnUse" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.1)" />
+                        <stop offset="50%" stop-color="rgba(255,255,255,0.8)" />
+                        <stop offset="100%" stop-color="rgba(255,255,255,0.1)" />
+                    </linearGradient>
+                    
+                    <marker id="arrowhead-glass" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                        <polygon points="0 0, 6 3, 0 6" fill="rgba(255,255,255,0.9)" />
+                    </marker>
+                </defs>
+
+                <!-- 
+                   Sectors Geometry 
+                   Center: 200, 200
+                   Radius: 150
+                   Results Ring Radius: 180
+                -->
+
+                <!-- Sector 1: S/O (Top-Left, 120deg) -->
+                <!-- From 210deg to 330deg (mathematical angles) or visual top-left -->
+                <!-- Let's do 3 equal slices: 
+                     1. S/O: Top (magenta/blue mix) -150 to -30 deg
+                     2. Assessment: Right (blue/teal) -30 to 90 deg
+                     3. Plan: Left (purple) 90 to 210 deg
+                     Wait, let's stick to conventional reading order or visual balance.
+                     Let's use the UI Design Doc: "S/O", "A", "P"
+                     S/O (Left/Top), A (Right), P (Bottom)
+                -->
+
+                <!-- 
+                    Slice 2: Assessment (Right) 
+                    Angle: -30 to 90
+                -->
+                <path id="sector-a" class="sector" d="M200,200 L329.9,125 A150,150 0 0,1 200,350 Z" 
+                      fill="url(#grad-a)" onclick="setMode('a')" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                
+                <!-- 
+                   Slice 3: Plan (Bottom Left)
+                   Angle: 90 to 210
+                -->
+                <path id="sector-p" class="sector" d="M200,200 L200,350 A150,150 0 0,1 70.1,125 Z" 
+                      fill="url(#grad-p)" onclick="setMode('p')" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+
+                <!-- 
+                   Slice 1: S/O (Top Left) 
+                   Angle: 210 to 330 (-150 to -30)
+                -->
+                <path id="sector-so" class="sector active" d="M200,200 L70.1,125 A150,150 0 0,1 329.9,125 Z" 
+                      fill="url(#grad-so)" onclick="setMode('so')" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+
+
+                <!-- Outcome Circle (Outside, Bottom Right) -->
+                <circle class="outcome-circle glass-btn" cx="350" cy="350" r="30" onclick="setMode('outcome')" />
+                <text x="350" y="354" class="label-text" style="font-size:10px; fill:#fff; text-anchor: middle;">FINAL</text>
+                <text x="350" y="366" class="label-text" style="font-size:10px; fill:#fff; text-anchor: middle;">OUTCOME</text>
+
+                <!-- Sector Labels (Static) -->
+                <text x="200" y="80" text-anchor="middle" class="sector-label" fill="#fff" style="text-shadow: 0 0 10px rgba(0,0,0,0.5)">S / O</text>
+                <text x="320" y="250" text-anchor="middle" class="sector-label" fill="#fff" style="text-shadow: 0 0 10px rgba(0,0,0,0.5)">A</text>
+                <text x="80" y="250" text-anchor="middle" class="sector-label" fill="#fff" style="text-shadow: 0 0 10px rgba(0,0,0,0.5)">P</text>
+
+                <!-- Flow Arrows (Liquid Style) -->
+                <!-- S/O -> A -->
+                <path d="M 277,115 A 110,110 0 0,1 306,168" stroke="url(#grad-flow)" stroke-width="2" fill="none" class="flow-arrow" marker-end="url(#arrowhead-glass)" />
+                
+                <!-- A -> P -->
+                <path d="M 228,306 A 110,110 0 0,1 171,306" stroke="url(#grad-flow)" stroke-width="2" fill="none" class="flow-arrow" marker-end="url(#arrowhead-glass)" />
+
+                <!-- P -> S/O -->
+                <path d="M 94,171 A 110,110 0 0,1 122,122" stroke="url(#grad-flow)" stroke-width="2" fill="none" class="flow-arrow" marker-end="url(#arrowhead-glass)" />
+
+                <!-- Patient Core (Center) -->
+                <circle class="patient-core glass-btn" cx="200" cy="200" r="45" onclick="setMode('full')" />
+                <text x="200" y="195" class="label-text" style="font-size:12px; fill:#94a3b8">PATIENT</text>
+                <text x="200" y="212" class="label-text" style="font-size:14px; fill:#fff">PT-014</text>
+
+                <!-- Chips (Mini circles) -->
+                
+                <!-- S/O Chips (Top area) -->
+                <circle class="chip" cx="160" cy="100" r="6" fill="#60a5fa">
+                    <title>Symptom: Chest Pain</title>
+                </circle>
+                <circle class="chip" cx="240" cy="100" r="6" fill="#60a5fa">
+                    <title>Symptom: SOB</title>
+                </circle>
+                <circle class="chip" cx="200" cy="60" r="8" fill="#ef4444">
+                    <title>Vitals: HR 110 (High)</title>
+                </circle>
+
+                <!-- A Chips (Right area) -->
+                <circle class="chip" cx="300" cy="200" r="8" fill="#a78bfa">
+                    <title>Diagnosis: Likely PE</title>
+                </circle>
+                <circle class="chip" cx="340" cy="180" r="6" fill="#a78bfa" stroke="#fff" stroke-width="2">
+                    <title>Evidence: Wells Criteria</title>
+                </circle>
+
+                <!-- P Chips (Left area) -->
+                <circle class="chip" cx="100" cy="200" r="7" fill="#2dd4bf">
+                    <title>Order: CT Angio</title>
+                </circle>
+                <circle class="chip" cx="80" cy="240" r="6" fill="#2dd4bf">
+                    <title>Meds: Heparin</title>
+                </circle>
+
+            </svg>
+        </div>
+
+        <div class="info-panel" id="info-panel">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <script>
+        const messages = {
+            'full': [
+                { role: 'system', text: 'Patient PT-014 loaded. 45yo M presenting with chest pain.' },
+                { role: 'user', text: 'Show me the summary so far.' },
+                { role: 'system', text: 'Currently in **Assessment** phase. High suspicion for PE. Vitals show tachycardia. D-dimer elevated.' }
+            ],
+            'so': [
+                { role: 'system', text: 'Extracting entities from transcript...' },
+                { role: 'system', text: 'Found: Chest pain (acute), SOB, HR 110.' },
+                { role: 'system', text: 'Missing info: Have we asked about recent travel or immobilization?' },
+                { role: 'user', text: 'Patient returned from 10h flight yesterday.' },
+                { role: 'system', text: 'Noted. Added "Recent long-haul travel" to Risk Factors.' }
+            ],
+            'a': [
+                { role: 'system', text: 'Generating differential...' },
+                { role: 'system', text: 'Top hypothesis: Pulmonary Embolism (High probability).' },
+                { role: 'system', text: 'Evidence retrieved: **Wells Criteria for PE** (Guideline 2024).' },
+                { role: 'user', text: 'What is the recommended workup?' },
+                { role: 'system', text: 'Based on Wells score > 4, **CT Angiography** is recommended (Level A evidence).' }
+            ],
+            'p': [
+                { role: 'system', text: 'Drafting Plan...' },
+                { role: 'system', text: '1. CT Angio Chest\n2. Start Heparin (weight based)\n3. Admit to Telemetry.' },
+                { role: 'user', text: 'Add pain management.' },
+                { role: 'system', text: 'Added: Morphine 2mg IV prn pain.' }
+            ],
+            'outcome': [
+                { role: 'system', text: 'Final Case Resolution' },
+                { role: 'system', text: 'Patient diagnosis confirmed: **Segmental Pulmonary Embolism**.' },
+                { role: 'system', text: 'Disposition: Admitted to Telemetry. Stable on Heparin drop.' },
+                { role: 'system', text: 'Quality Measure: Appropriate VTE prophylaxis ordered within 4 hours.' }
+            ]
+        };
+
+        const infoData = {
+            'full': {
+                title: "Patient Summary",
+                items: [
+                    { label: "Patient", value: "PT-014 (45M)" },
+                    { label: "Complaint", value: "Chest Pain + SOB" },
+                    { label: "Status", value: "Assessment In-Progress" },
+                    { label: "Team", value: "Dr. Smith (ED)" }
+                ]
+            },
+            'so': {
+                title: "Key Findings (Inputs)",
+                items: [
+                    { label: "Reported", value: "Headache (1 week)", type: "subjective" },
+                    { label: "Reported", value: "SOB (Stairs)", type: "subjective", highlight: true },
+                    { label: "Reported", value: "Chest Pain (Acute)", type: "subjective", highlight: true },
+                    { label: "HR", value: "110 bpm", type: "objective", highlight: true },
+                    { label: "BP", value: "135/85 mmHg", type: "objective" },
+                    { label: "O2 Sat", value: "94% RA", type: "objective", highlight: true },
+                    { label: "Risk Factor", value: "Long-haul flight", type: "subjective" },
+                    { label: "Test Result", value: "D-Dimer > 500", type: "objective", highlight: true },
+                    { label: "Test Result", value: "Trop Negative", type: "objective" }
+                ]
+            },
+            'a': {
+                title: "Differential & Evidence",
+                items: [
+                    { label: "Top Hypothesis", value: "Pulmonary Embolism", highlight: true },
+                    { label: "Wells Score", value: "6.0 (High Risk)" },
+                    { label: "Evidence", value: "ACCP 2021 Guidelines" },
+                    { label: "Paper", value: "JAMA 2023: PE Mgmt" },
+                    { label: "Paper", value: "NEJM: Wells Validation" },
+                    { label: "Alt Diagnosis", value: "ACS (Rule out)" }
+                ]
+            },
+            'p': {
+                title: "Active Orders",
+                items: [
+                    { label: "Imaging", value: "CT Angio Chest", highlight: true },
+                    { label: "Meds", value: "Heparin IV Bolus" },
+                    { label: "Analgesia", value: "Morphine 2mg" },
+                    { label: "Dispo", value: "Admit Telemetry" }
+                ]
+            },
+            'outcome': {
+                title: "Final Outcomes",
+                items: [
+                    { label: "Final Dx", value: "Pulmonary Embolism", highlight: true },
+                    { label: "Status", value: "Stable / Admitted" },
+                    { label: "Gap Analysis", value: "Learning: Missed leg swirl exam" },
+                    { label: "Total Time", value: "45 mins" }
+                ]
+            }
+        };
+
+        function setMode(mode) {
+            // Update buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            // Map outcome to full or none since it doesn't have a top button? Or add logic.
+            // Actually, clicking the outcome circle changes the mode to 'outcome'.
+            // The buttons are full, so, a, p. 
+            // If mode is 'outcome', maybe no button is active, or we add one.
+            const btnMap = { 'full': 0, 'so': 1, 'a': 2, 'p': 3 };
+            if (btnMap[mode] !== undefined) {
+                 document.querySelectorAll('.mode-btn')[btnMap[mode]].classList.add('active');
+            }
+
+            // Update Hub Visuals
+            document.querySelectorAll('.sector').forEach(sec => sec.classList.remove('active'));
+            document.querySelector('.outcome-circle').style.fill = 'var(--bg-color)'; 
+            if (mode === 'so') document.getElementById('sector-so').classList.add('active');
+            if (mode === 'a') document.getElementById('sector-a').classList.add('active');
+            if (mode === 'p') document.getElementById('sector-p').classList.add('active');
+            
+            if (mode === 'outcome') {
+                document.querySelector('.outcome-circle').style.fill = 'var(--accent-teal)';
+            }
+            // Full mode keeps default state (or highlight center)
+
+            // Inject Chat Content
+            const container = document.getElementById('chat-stream');
+            container.innerHTML = '';
+            
+            const msgs = messages[mode] || messages['full'];
+            msgs.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `message ${msg.role}`;
+                // Simple markdown-ish bold handling
+                div.innerHTML = msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                container.appendChild(div);
+            });
+
+            // Update Info Panel
+            const infoPanel = document.getElementById('info-panel');
+            const data = infoData[mode] || infoData['full'];
+            
+            let html = `
+                <div class="info-section-title">
+                    <span>${data.title}</span>
+                    <span>Last Updated: Just now</span>
+                </div>
+                <div class="info-grid">
+            `;
+            
+            data.items.forEach(item => {
+                const highlightClass = item.highlight ? 'highlight' : '';
+                const typeClass = item.type ? item.type : '';
+                html += `
+                    <div class="info-card ${typeClass}">
+                        <h4>${item.label}</h4>
+                        <div class="value ${highlightClass}">${item.value}</div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            infoPanel.innerHTML = html;
+        }
+
+        // Initialize
+        setMode('full');
+
+    </script>
+</body>
+</html>
