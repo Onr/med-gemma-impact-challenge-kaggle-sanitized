@@ -17,21 +17,8 @@ npm run dev
 
 Open the local URL printed by Vite (usually `http://localhost:5173`).
 
-## Environment setup
 
-Create `app/.env.local`:
-
-```env
-# Cloud API mode
-VITE_GOOGLE_API_KEY=your_google_ai_api_key
-VITE_GOOGLE_MODEL_ID=gemini-2.0-flash
-
-# Optional: use local backend instead of cloud
-# VITE_USE_LOCAL_BACKEND=true
-# VITE_BACKEND_URL=http://localhost:8000
-```
-
-## Optional local backend
+## local backend
 
 ```bash
 cd app/backend
@@ -56,7 +43,3 @@ npm run build
 npm run preview
 ```
 
-## Notes
-
-- This repository is intentionally minimized for public sharing.
-- Add your own API keys locally; never commit secrets.
